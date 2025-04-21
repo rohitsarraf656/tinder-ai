@@ -2,11 +2,10 @@ package com.example.tinder_ai.conversations;
 
 import com.example.tinder_ai.profiles.ProfileRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -31,6 +30,30 @@ public class ConversationController {
         conversationRepository.save(conversation);
         return conversation;
     }
+    @PostMapping("/conversations/{conversationId}")
+    public Conversation addMessageToConversation(@PathVariable String conversationId,
+                                                 @RequestBody ChatMessage chatMessage){
+        Conversation conversation = conversationRepository.findById(conversationId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NO_CONTENT, "No conversation found"));
+        profileRepository.findById(chatMessage.authorId()).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NO_CONTENT,"No profile found"));
+        // TODO need to check author of a message happens to be only profile associated with the message or user
+        ChatMessage chatMessagewithTime = new ChatMessage(
+                chatMessage.messageText(),
+                chatMessage.authorId(),
+                LocalDateTime.now()
+        );
+        conversation.chatMessages().add(chatMessagewithTime);
+        conversationRepository.save(conversation);
+        return conversation;
+
+    }
+    @GetMapping("/conversations/{conversationId}")
+    public Conversation getConversation(@PathVariable String conversationId){
+        return  conversationRepository.findById(conversationId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NO_CONTENT, "No conversation found"));
+    }
+
     public record CreateConversationRecord(
             String profileId
     ){}
